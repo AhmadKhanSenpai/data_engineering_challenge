@@ -18,9 +18,7 @@ def load_dataset(path: str) -> pd.DataFrame:
         lambda col: col.str.strip() if col.dtype == "object" else col
     )  # removing spaces if any
 
-    df["Timestamp"] = pd.to_datetime(
-        df["Timestamp"], utc=True
-    )  # converting to datetime object with utc
+    df["Timestamp"] = pd.to_datetime(df["Timestamp"])  # converting to datetime object
 
     for col, dtypes in data_valid.items():
         df[col] = df[col].astype(dtypes)  # validating the data
