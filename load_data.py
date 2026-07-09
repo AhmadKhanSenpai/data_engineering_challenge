@@ -12,22 +12,23 @@ data_valid = {
 
 # creating a function that reads, validate and clean the data
 def load_dataset(path: str) -> pd.DataFrame:
-    df = pd.read_csv(path)  # reading the data
+    # reading the data
+    df = pd.read_csv(path)
 
-    df = df.apply(
-        lambda col: col.str.strip() if col.dtype == "object" else col
-    )  # removing spaces if any
+    # removing leading and trailing spaces
+    df = df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
+    # converting to datetime object
+    df["Timestamp"] = pd.to_datetime(df["Timestamp"])
 
-    df["Timestamp"] = pd.to_datetime(df["Timestamp"])  # converting to datetime object
-
+    # validating the datatypes
     for col, dtypes in data_valid.items():
-        df[col] = df[col].astype(dtypes)  # validating the data
+        df[col] = df[col].astype(dtypes)
 
-    try:
-        if df.shape[0] == 480:
-            pass
-    except ValueError:
-        print("number of rows is not 480")
+    if df.shape[0] != 480:
+        raise Exception("The data is not valid")
+
+    # i am writing this here because the task2 and task 3 both are expecting hourlty timestamp
+    df["Hourly_Timestamp"] = df["Timestamp"].dt.floor("h")
 
     return df
 
