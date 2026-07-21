@@ -11,3 +11,4 @@ CREATE Table sensor_readings(
     battery_total_current REAL,
     total_voltage REAL
 );
+
