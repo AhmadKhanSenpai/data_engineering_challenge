@@ -315,3 +315,120 @@ SELECT
 FROM sensor_readings
 GROUP BY source_tag, hourly_window
 ORDER BY hourly_window
+
+
+# Just like we can create a list in python, we can create a table in SQL to telly sources
+SELECT 
+    source,
+    '%' || source || '%' as source_with_percent
+FROM (
+    VALUES
+    ('DG'),
+    ('Solar'),
+    ('Battery')
+) AS sources(source); 
+
+# how sources.source works it is just like sensor_readings.source_tag
+SELECT
+    sources.source 
+FROM (
+    VALUES
+    ('DG'),
+    ('Solar'),
+    ('Battery')
+) AS sources(source); 
+
+
+-- Exercise 4 — Dynamic ILIKE
+-- Using your real table:
+-- Find rows where source_tag contains any of these:
+-- DG
+-- Solar
+-- Battery
+-- using the VALUES table.
+-- Do not use three separate OR conditions.
+
+WITH sources(source) as
+(
+    VALUES
+    ('DG'),
+    ('Solar'),
+    ('Battery')
+)
+
+SELECT
+    *
+FROM sensor_readings sr
+JOIN sources s
+ON sr.source_tag ILIKE '%' || s.source || '%'
+
+
+# lets calculate run_hours now
+WITH sources(source) as
+(
+    VALUES
+    ('DG'),
+    ('Solar'),
+    ('Battery')
+),
+
+agg_table as(
+
+    SELECT
+    reading_id,
+    site_code,
+    timestamp,
+    s.source,
+    solar_output_current,
+    total_load_current,
+    battery_total_current,
+    total_voltage
+    FROM sensor_readings sr
+    JOIN sources s
+    ON sr.source_tag ILIKE '%' || s.source || '%'
+)
+
+SELECT
+    site_code,
+    DATE_TRUNC('hour', timestamp) AS hour_window,
+    source,
+    AVG(
+        CASE 
+            WHEN source ILIKE 'dg' THEN total_load_current * total_voltage / 1000
+            WHEN source ILIKE 'solar' THEN solar_output_current * total_voltage / 1000
+            WHEN source ILIKE 'battery' THEN battery_total_current * total_voltage / 1000
+        END
+    ) as kw,
+
+    ROUND(COUNT(*) * (3.0 / 60.0), 2) as run_hour
+FROM agg_table
+GROUP BY
+    site_code,
+    DATE_TRUNC('hour', timestamp),
+    source;
+
+
+
+
+
+
+-- testing logic
+WITH sources(source) as
+(
+    VALUES
+    ('DG'),
+    ('Solar'),
+    ('Battery')
+)
+
+SELECT
+    reading_id,
+    site_code,
+    source_tag,
+    solar_output_current,
+    total_load_current,
+    battery_total_current,
+    total_voltage
+    FROM sensor_readings sr
+    JOIN sources s
+    ON sr.source_tag ILIKE '%' || s.source || '%'
